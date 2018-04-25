@@ -56,6 +56,9 @@ logic rst_main_n_sync;
   logic [15:0] sh_cl_status_vdip_q;
   logic [15:0] sh_cl_status_vdip_q2;
   logic [31:0] hello_world_q;
+  logic [31:0] x_q;
+  logic [31:0] y_q;
+  logic [31:0] z_q;
 
 //-------------------------------------------------
 // ID Values (cl_hello_world_defines.vh)
@@ -258,7 +261,8 @@ always_ff @(posedge clk_main_a0)
       rvalid <= 1;
       rdata  <= (araddr_q == `HELLO_WORLD_REG_ADDR) ? hello_world_q_byte_swapped[31:0]:
                 (araddr_q == `VLED_REG_ADDR       ) ? {16'b0,vled_q[15:0]            }:
-                                                      `UNIMPLEMENTED_REG_VALUE        ;
+		(araddr_q == `Z_REG_ADDR) ? z_q[31:0]:                 
+                                     `UNIMPLEMENTED_REG_VALUE        ;
       rresp  <= 0;
    end
 
@@ -280,6 +284,31 @@ always_ff @(posedge clk_main_a0)
 
 assign hello_world_q_byte_swapped[31:0] = {hello_world_q[7:0],   hello_world_q[15:8],
                                            hello_world_q[23:16], hello_world_q[31:24]};
+
+always_ff @(posedge clk_main_a0)
+   if (!rst_main_n_sync) begin                    // Reset
+      x_q[31:0] <= 32'h0000_0000;
+   end
+   else if (wready & (wr_addr == `X_REG_ADDR)) begin  
+      x_q[31:0] <= wdata[31:0];
+   end
+   else begin                                // Hold Value
+      x_q[31:0] <= x_q[31:0];
+   end
+
+
+always_ff @(posedge clk_main_a0)
+   if (!rst_main_n_sync) begin                    // Reset
+      y_q[31:0] <= 32'h0000_0000;
+   end
+   else if (wready & (wr_addr == `Y_REG_ADDR)) begin  
+      y_q[31:0] <= wdata[31:0];
+   end
+   else begin                                // Hold Value
+      y_q[31:0] <= y_q[31:0];
+   end
+
+assign z_q[31:0] = x_q[31:0]+y_q[31:0];
 
 //-------------------------------------------------
 // Virtual LED Register
